@@ -13,7 +13,7 @@ This repository is for the paper UAlberta at SemEval-2025 Task 2: Prompting and 
 - `wiki/` – Wiki Retrieval Module  
 - `wsd/` – Word Sense Disambiguation Module
 
-(Official submissions can be found in [`assets/submissions/`](assets/submissions/)
+(Official submissions can be found in [`assets/submissions/`](assets/submissions/))
 
 ---
 
