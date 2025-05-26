@@ -1,0 +1,42 @@
+{
+    "tr_TR": {
+        "label_match_percentage": 75.34246575342466,
+        "aka_match_percentage": 2.4657534246575343
+    },
+    "es_ES": {
+        "label_match_percentage": 85.81173260572987,
+        "aka_match_percentage": 9.27694406548431
+    },
+    "fr_FR": {
+        "label_match_percentage": 84.5303867403315,
+        "aka_match_percentage": 9.116022099447514
+    },
+    "ja_JP": {
+        "label_match_percentage": 89.86111111111111,
+        "aka_match_percentage": 4.444444444444445
+    },
+    "ko_KR": {
+        "label_match_percentage": 86.30872483221476,
+        "aka_match_percentage": 4.026845637583892
+    },
+    "zh_TW": {
+        "label_match_percentage": 60.91794158553546,
+        "aka_match_percentage": 8.205841446453407
+    },
+    "it_IT": {
+        "label_match_percentage": 89.72602739726028,
+        "aka_match_percentage": 2.6027397260273974
+    },
+    "ar_AE": {
+        "label_match_percentage": 89.70792767732962,
+        "aka_match_percentage": 2.781641168289291
+    },
+    "th_TH": {
+        "label_match_percentage": 90.28169014084507,
+        "aka_match_percentage": 2.535211267605634
+    },
+    "de_DE": {
+        "label_match_percentage": 86.32010943912448,
+        "aka_match_percentage": 9.575923392612859
+    }
+}

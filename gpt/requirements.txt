@@ -1,0 +1,8 @@
+unbabel-comet==2.2.4
+jupyter==1.1.1
+openai==1.68.2
+python-dotenv==1.0.1
+OpenCC==1.1.9
+datasets==3.4.1
+tqdm==4.67.1
+pandas==2.2.3
