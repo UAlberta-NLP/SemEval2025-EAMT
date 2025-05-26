@@ -3,7 +3,8 @@ This repository is for the paper UAlberta at SemEval-2025 Task 2: Prompting and 
 
 🏆 **1st Place — COMET Track**  
 
-📊 [Leaderboard](https://huggingface.co/spaces/sapienzanlp/ea-mt-leaderboard) | [📄 Paper]() | [🖼️ Poster]() | [📑 Slides]()
+🔗 [Task](https://sapienzanlp.github.io/ea-mt/) | 📊 [Leaderboard](https://huggingface.co/spaces/sapienzanlp/ea-mt-leaderboard)
+📄 [Paper]() | 🖼️ [Poster]() | 📑 [Slides]()
 
 ## 📁 Directory Overview
 
@@ -11,6 +12,8 @@ This repository is for the paper UAlberta at SemEval-2025 Task 2: Prompting and 
 - `trans/` – Other Translation Modules (e.g., Google Cloud)
 - `wiki/` – Wiki Retrieval Module  
 - `wsd/` – Word Sense Disambiguation Module
+
+(Official submissions can be found in [`assets/submissions/`](assets/submissions/)
 
 ---
 
