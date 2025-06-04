@@ -4,7 +4,7 @@ This repository is for the paper UAlberta at SemEval-2025 Task 2: Prompting and 
 🏆 **1st Place — COMET Track**  
 
 🔗 [Task](https://sapienzanlp.github.io/ea-mt/) | 📊 [Leaderboard](https://huggingface.co/spaces/sapienzanlp/ea-mt-leaderboard)
-📄 [Paper]() | 🖼️ [Poster]() | 📑 [Slides]()
+📄 [Paper](assets/paper.pdf) | 🖼️ [Poster](assets/paper.pdf) | 📑 [Slides]()
 
 ## 📁 Directory Overview
 
