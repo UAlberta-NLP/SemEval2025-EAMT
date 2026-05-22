@@ -1,41 +1,34 @@
 import json
+import logging
 import os
 from datasets import load_dataset
 from comet import download_model, load_from_checkpoint
 import zipfile
 
+logger = logging.getLogger(__name__)
+
+COMET_MODEL_NAME = "Unbabel/wmt22-comet-da"
+DATASET_NAME = "sapienzanlp/ea-mt-benchmark"
+DATASET_SPLIT_KEY = "en-zh"
+BATCH_SIZE = 32
+NUM_GPUS = 1
+
 
 def eval_comet(system_name, language_name, split_name):
-    """
-    Evaluate predictions using COMET.
-
-    Args:
-        system_name (str): Name of the system.
-        language_name (str): Target language code.
-        split_name (str): Dataset split name.
-
-    Returns:
-        float: COMET evaluation score.
-    """
-    COMET_MODEL_NAME = "Unbabel/wmt22-comet-da"
-    SYSTEM_NAME = system_name
     SOURCE_LANGUAGE = "en_US"
-    TARGET_LANGUAGE = language_name
     DATA_DIR = "./data"
-    NUM_GPUS = 1
-    BATCH_SIZE = 32
 
     # Load references
     references = {}
     if split_name == "test_without_targets":
-        dataset = load_dataset("sapienzanlp/ea-mt-benchmark", "en-zh")
+        dataset = load_dataset(DATASET_NAME, DATASET_SPLIT_KEY)
         references = {
             ex["id"]: {"id": ex["id"], "source": ex["source"], "targets": ex["targets"]}
             for ex in dataset["test"]
         }
     else:
         PATH_TO_REFERENCES = os.path.join(
-            DATA_DIR, "references", split_name, f"{TARGET_LANGUAGE}.jsonl"
+            DATA_DIR, "references", split_name, f"{language_name}.jsonl"
         )
         with open(PATH_TO_REFERENCES, "r", encoding="utf-8") as f:
             for line in f:
@@ -43,26 +36,25 @@ def eval_comet(system_name, language_name, split_name):
                 references[data["id"]] = data
 
     # Load predictions
-    predictions = {}
     if split_name == "test_without_targets":
         zip_path = os.path.join(DATA_DIR, f"predictions", f"{split_name}.zip")
         extract_path = os.path.join(DATA_DIR, f"predictions", split_name)
 
-        # Extract zip file if not already extracted
         if not os.path.exists(extract_path):
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(extract_path)
 
         PATH_TO_PREDICTIONS = os.path.join(
-            extract_path, split_name, f"{TARGET_LANGUAGE}.jsonl"
+            extract_path, split_name, f"{language_name}.jsonl"
         )
+        predictions = {}
         with open(PATH_TO_PREDICTIONS, "r", encoding="utf-8") as f:
             for line in f:
                 data = json.loads(line)
                 predictions[data["id"]] = data
     else:
         PATH_TO_PREDICTIONS = os.path.join(
-            DATA_DIR, "predictions", SYSTEM_NAME, split_name, f"{TARGET_LANGUAGE}.jsonl"
+            DATA_DIR, "predictions", system_name, split_name, f"{language_name}.jsonl"
         )
         predictions = {}
         with open(PATH_TO_PREDICTIONS, "r", encoding="utf-8") as f:
@@ -72,7 +64,7 @@ def eval_comet(system_name, language_name, split_name):
 
     # Match references and predictions
     ids = set(references.keys()) & set(predictions.keys())
-    print(f"Found {len(ids)} matching instances.")
+    logger.info(f"Found {len(ids)} matching instances.")
     num_missing_predictions = len(references) - len(ids)
 
     # Prepare instances for COMET evaluation
@@ -93,7 +85,7 @@ def eval_comet(system_name, language_name, split_name):
         instance_ids[id] = [current_index, current_index + len(reference["targets"])]
         current_index += len(reference["targets"])
 
-    print(f"Loaded {len(instances)} instances.")
+    logger.info(f"Loaded {len(instances)} instances.")
 
     # Load COMET model and evaluate
     model_path = download_model(COMET_MODEL_NAME)

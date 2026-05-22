@@ -1,13 +1,16 @@
 import argparse
-import sys
-from config import SUPPORTED_LANGUAGES, FUNCTION_WORDS, is_punctuation, TOKENIZERS
 import csv
+import random
+
+from config import SUPPORTED_LANGUAGES, FUNCTION_WORDS, is_punctuation, TOKENIZERS
 from simalign import SentenceAligner
 import pandas as pd
-import random
 from ne_identification import part_of_ne
 
+_NO_NE_SENTINEL = "<NO_NAMED_ENTITY>"
+
 GLOBAL_ALIGNER = SentenceAligner(model="xlmr", layer=8, token_type="bpe", matching_methods="mai")
+
 
 class LiteralEnsembler:
     def __init__(self, csv_file_path, source_column, ne_file_path, src_ne_column, tar_ne_column, translation_cols, language, using_nes):
@@ -28,12 +31,12 @@ class LiteralEnsembler:
         if self.using_nes:
             self.import_named_entities(csv_file_path, source_column, ne_file_path, src_ne_column, tar_ne_column)
 
-    def import_translations(self, filepath, translation_columns, source_column):
-        with open(filepath, 'r', encoding='utf-8') as csvfile:
+    def import_translations(self, csv_file_path, translation_cols, source_column):
+        with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
             csvreader = csv.DictReader(csvfile, delimiter="\t")
             for j, row in enumerate(csvreader):
                 row_tokens = {}
-                for key in translation_columns:
+                for key in translation_cols:
                     doc = TOKENIZERS[self.language](row[key])
                     row_tokens[key] = [t.text for t in doc if t.text.strip()]
                     self.raw_sent[key][j] = row[key]
@@ -49,7 +52,7 @@ class LiteralEnsembler:
             self.entities_t[row[src_sentence_column]] = row[tarlang_ne_column]
 
     def get_english_entity(self, index):
-        return self.entities_s.get(self.raw_sent[self.source_col][index], "<TOKENSAYINGTHEREISNONAMEDENTITY>")
+        return self.entities_s.get(self.raw_sent[self.source_col][index], _NO_NE_SENTINEL)
 
     def is_function_word(self, word):
         return word in self.function_words
@@ -79,7 +82,7 @@ class LiteralEnsembler:
         return len(unaligned) / true_len if true_len > 0 else 0
 
     def score_pair(self, eng_sent, tar_sent, index, col):
-        return 1 - self.usw(eng_sent, tar_sent, index, col),
+        return 1 - self.usw(eng_sent, tar_sent, index, col)
 
     def check_for_ne(self, key, index):
         if not self.using_nes:
@@ -97,7 +100,6 @@ class LiteralEnsembler:
                     self.has_ne[key][i] = self.check_for_ne(key, i)
         for i, row in enumerate(self.translations):
             row_scores = {}
-            print(i)
             for key in row:
                 if key != self.source_col:
                     row_scores[key] = (0 if self.language == "th" and key == "DeepL"
@@ -142,59 +144,18 @@ class LiteralEnsembler:
             writer.writerows(lines)
 
 
-
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process alignment and NE files for a given language.")
 
+    parser.add_argument("--input-file", "-i", type=str, required=True, help="Path to the input file")
+    parser.add_argument("--input-cols", "-c", nargs="+", type=str, required=True, help="List of input column names")
+    parser.add_argument("--output-file", "-o", type=str, required=True, help="Path to the output file")
+    parser.add_argument("--source-col", "-s", type=str, required=True, help="Name of the column containing the source sentence.")
+    parser.add_argument("--ne-file", "-n", type=str, required=False, help="Path to the Named Entity (NE) file")
+    parser.add_argument("--ne-col-src", "-e", type=str, required=False, help="Column name where the English-language NE is found")
+    parser.add_argument("--ne-col-tgt", "-t", type=str, required=False, help="Column name where the Target-language NE is found")
     parser.add_argument(
-        "--input-file", "-i",
-        type=str,
-        required=True,
-        help="Path to the input file"
-    )
-    parser.add_argument(
-    "--input-cols", "-c",
-    nargs="+",
-    type=str,
-    required=True,
-    help="List of input column names"
-)
-    parser.add_argument(
-        "--output-file", "-o",
-        type=str,
-        required=True,
-        help="Path to the output file"
-    )
-    parser.add_argument(
-        "--source-col", "-s",
-        type=str,
-        required=True,
-        help="Name of the column containing the source sentence."
-    )
-    parser.add_argument(
-        "--ne-file", "-n",
-        type=str,
-        required=False,
-        help="Path to the Named Entity (NE) file"
-    )
-    parser.add_argument(
-        "--ne-col-src", "-e",
-        type=str,
-        required=False,
-        help="Column name where the English-language NE is found"
-    )
-    parser.add_argument(
-        "--ne-col-tgt", "-t",
-        type=str,
-        required=False,
-        help="Column name where the Target-language NE is found"
-    )
-    parser.add_argument(
-        "--language", "-l",
-        type=str,
-        required=True,
+        "--language", "-l", type=str, required=True,
         choices=sorted(SUPPORTED_LANGUAGES),
         help="Two-letter language code (e.g., 'fr', 'zh')"
     )
@@ -206,25 +167,25 @@ def parse_arguments():
         ne_col_t = args.ne_col_tgt
         ne_col_s = args.ne_col_src
     elif args.ne_file or args.ne_col_tgt or args.ne_col_src:
-        parser.error("--ne-file and --ne-col-target and --ne-col-source must be provided together.")
+        parser.error("--ne-file, --ne-col-src, and --ne-col-tgt must all be provided together.")
     else:
-        print("Skipping NE logic. ")
+        print("Skipping NE logic.")
         using_nes = False
         ne_file = ''
         ne_col_t = ''
         ne_col_s = ''
-    
-    
 
     return args, using_nes, ne_file, ne_col_t, ne_col_s
+
 
 def main():
     args, using_nes, ne_file, ne_col_t, ne_col_s = parse_arguments()
     print(f"Parsed arguments: {args}")
-    
+
     le = LiteralEnsembler(args.input_file, args.source_col, ne_file, ne_col_s, ne_col_t, args.input_cols, args.language, using_nes)
     le.score_all()
     le.write_choices(args.output_file)
+
 
 if __name__ == "__main__":
     main()

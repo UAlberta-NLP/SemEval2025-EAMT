@@ -1,8 +1,4 @@
 import spacy
-from spacy.lang.th import Thai
-from spacy.lang.ja import Japanese
-from spacy.lang.ar import Arabic
-from spacy.lang.tr import Turkish
 
 
 SUPPORTED_LANGUAGES = {
@@ -20,31 +16,31 @@ SUPPORTED_LANGUAGES = {
 
 TOKENIZERS = {
     'en': spacy.load("en_core_web_sm"),
-    'it': spacy.load("it_core_news_sm"),    # Italian
-    'es': spacy.load("es_core_news_sm"),    # Spanish
-    'fr': spacy.load("fr_core_news_sm"),    # French
-    'ja': spacy.load("xx_ent_wiki_sm"),    # Japanese
-    'ko': spacy.load("ko_core_news_sm"),    # Korean
-    'zh': spacy.load("zh_core_web_sm"),     # Chinese (simplified)
-    'de': spacy.load("de_core_news_sm"),    # German
-    'ar': Arabic(),    # Arabic
-    'tr': Turkish(),    # Turkish
-    'th': spacy.load("xx_ent_wiki_sm")     # Thai (no dedicated SpaCy model, using multi-language model) '''
+    'it': spacy.load("it_core_news_sm"),
+    'es': spacy.load("es_core_news_sm"),
+    'fr': spacy.load("fr_core_news_sm"),
+    'ja': spacy.load("xx_ent_wiki_sm"),
+    'ko': spacy.load("ko_core_news_sm"),
+    'zh': spacy.load("zh_core_web_sm"),
+    'de': spacy.load("de_core_news_sm"),
+    'ar': spacy.blank("ar"),
+    'tr': spacy.blank("tr"),
+    'th': spacy.load("xx_ent_wiki_sm"),  # no dedicated SpaCy model; using multilingual
 }
 
-def read_function_words(filename):
-    func_wrds = []
-    lines = open(filename, "r").readlines()
-    for line in lines:
-        func_wrds.append(line.strip().lower())
-    func_wrds = func_wrds + list(PUNCTUATION)
-    return func_wrds
-    
-PUNCTUATION = {'.', ',', '!', '?', '.', ':', ';', '*', ' ', " ", '-', '؟'}
+PUNCTUATION = {'.', ',', '!', '?', ':', ';', '*', ' ', ' ', '-', '؟'}
+
 
 def is_punctuation(word):
     return word in PUNCTUATION
-    
+
+
+def read_function_words(filename):
+    with open(filename, "r") as f:
+        func_wrds = [line.strip().lower() for line in f]
+    return func_wrds + list(PUNCTUATION)
+
+
 FUNCTION_WORDS = read_function_words('functional_word_list.txt')
 
 USE_SPACES = ['de', 'fr', 'it', 'es', 'tr']

@@ -1,128 +1,88 @@
-# Entity-Aware Machine Translation Evaluation
+# GPT Translation Module
 
-This repository contains tools and scripts for evaluating machine translation quality with a focus on entity translation accuracy. It includes implementations of both COMET and M-ETA (Manual Entity Translation Accuracy) evaluation metrics.
-
-## The EA-MT Shared Task
-
-The [EA-MT (Entity-Aware Machine Translation) shared task](https://sapienzanlp.github.io/ea-mt/) is part of the SemEval-2025 workshop.
-
-## Task Information
-
-This repository provides our code and methods for Task 2: EA-MT (Entity-Aware Machine Translation) for SemEval 2025. The task is to evaluate machine translation systems with a focus on entity translation accuracy.
-
-## Directory
-
--   **eval_comet.py** - evaluates overall translation quality based on COMET
--   **eval_harmonic.py** - goes through model initialization, prompt selection, and harmonic score computation
--   **eval_meta.py** - evaluates entity translation quality based on META
--   **prompts.py** - all prompt variants used in methods and studies
-
-```
-final-translation-scripts/
-├── eval_comet.py
-├── eval_harmonic.py
-├── eval_meta.py
-├── examples.py
-├── LICENSE.txt
-├── prompts.py
-├── README.md
-├── requirements.txt
-```
-
-## Dependencies
-
--   python >= 3.11.11
--   jupyter >= 1.1.1
--   unbabel-comet >= 2.2.4
--   openai >= 1.68.2
--   python-dotenv >= 1.0.1
--   opencc >= 1.1.9
--   datasets >= 3.4.1
--   tqdm >= 4.67.1
--   pandas >= 2.2.3
+GPT-based translation and evaluation for the EA-MT pipeline. Translates English sentences to a target language using `gpt-4o-2024-08-06`, optionally augmented with Wikidata or BabelNet named entity translations, and evaluates using COMET and m-ETA.
 
 ## Setup
 
-We recommend using `conda` to manage the environment and dependencies. If you don't have `conda` installed, you can download it [here](https://docs.conda.io/en/latest/miniconda.html).
-
-1. Create a virtual environment:
-
 ```bash
-# Create a new environment
 conda create -n ea-mt-eval python=3.10
-
-# Activate the environment
 conda activate ea-mt-eval
-```
-
-2. Install requirements:
-
-```bash
-pip install pip --upgrade
 pip install -r requirements.txt
 ```
 
-## Data Format
+Copy `.env.example` to `.env` and add your OpenAI API key:
 
-The data should be organized in the following structure:
+```bash
+cp .env.example .env
+```
+
+## Data Layout
 
 ```
 data/
+├── references/
+│   └── validation/        # ground-truth .jsonl per language
 ├── predictions/
 │   └── <model_name>/
-│       └── validation/
-│           ├── ar_AE.jsonl
-│           ├── de_DE.jsonl
-│           └── ...
-└── references/
-    ├── sample/
-    ├── test/
-    └── validation/
+│       └── validation/    # output .jsonl per language
+├── wikidata/
+│   └── validation/        # pre-fetched Wikidata NE translations (.tsv)
+└── babelnet/
+    └── validation/        # BabelNet NE translations (.tsv)
 ```
 
-### JSONL Format
+Each prediction `.jsonl` line: `{"id", "source_language", "target_language", "text", "wikidata_id", "prediction"}`
 
-Each line contains a JSON object with:
-
--   `id`: Unique identifier
--   `source_language`: Source language code
--   `target_language`: Target language code
--   `text`: Source text
--   `prediction`: Translated text (for predictions)
--   `targets`: List of reference translations (for references)
+Each reference `.jsonl` line: `{"id", "source", "targets": [{"translation", "mention"}]}`
 
 ## Usage
 
-### Supported Target Language
+Run all commands from inside `gpt/`.
 
--   Arabic (ar_AE)
--   Chinese Traditional (zh_TW)
--   French (fr_FR)
--   German (de_DE)
--   Italian (it_IT)
--   Japanese (ja_JP)
--   Korean (ko_KR)
--   Spanish (es_ES)
--   Thai (th_TH)
--   Turkish (tr_TR)
-
-### Translation
-
-Use the OpenAI API for translation by running the evaluation script:
+**Translate and evaluate (validation split):**
 
 ```bash
-python eval_harmonic.py target_language
+python eval_harmonic.py "French"
 ```
 
--   `target_language`: Target language for translations (e.g. French)
+Supported language names: `Arabic`, `Chinese (Traditional)`, `French`, `German`, `Italian`, `Japanese`, `Korean`, `Spanish`, `Thai`, `Turkish`
 
-Requires setting the `OPENAI_API_KEY` environment variable in .env at root level.
+**Evaluate only:**
+
+```bash
+python eval_comet.py   # COMET score
+python eval_meta.py    # m-ETA score
+```
+
+## Configuration
+
+Edit the top of `eval_harmonic.py` to toggle knowledge sources and the dataset split:
+
+| Flag | Default | Effect |
+|------|---------|--------|
+| `WIKI` | `False` | Use Wikidata NE translations |
+| `BABELNET` | `False` | Use BabelNet NE translations |
+| `TRACK` | `"validation"` | `"validation"` or `"test_without_targets"` |
+
+## Prompt Variants (`prompts.py`)
+
+| Name | Description |
+|------|-------------|
+| `One_Shot` | Few-shot example only, no external NE knowledge |
+| `Soft_NETs_WD` | Soft NE hint from Wikidata (label + aliases) |
+| `One_Shot_BN` | Hard NE constraint from BabelNet |
+| `Missing_WD` | Fallback when Wikidata translation is absent |
+
+## Files
+
+| File | Description |
+|------|-------------|
+| `eval_harmonic.py` | Main entry point: translate + compute harmonic score |
+| `eval_comet.py` | COMET evaluation using `Unbabel/wmt22-comet-da` |
+| `eval_meta.py` | m-ETA (entity substring match accuracy) evaluation |
+| `prompts.py` | All prompt variants |
+| `examples.py` | One-shot translation examples per language |
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License - see the LICENSE.txt file for details.
-
-## Authors
-
--   **[Ning Shi](https://mrshininnnnn.github.io/)** - MrShininnnnn@gmail.com
--   **[John Zhang](https://github.com/jonz9)** - j444zhan@uwaterloo.ca
+Creative Commons Attribution-ShareAlike 4.0 International — see [LICENSE.txt](LICENSE.txt).

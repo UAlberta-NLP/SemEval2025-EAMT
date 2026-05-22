@@ -17,26 +17,19 @@ from examples import examples
 from prompts import prompts
 
 
-# Disable OpenAI and httpx logging
-# Configure logging level for specific loggers by name
 logging.getLogger("openai").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
-# simplified to traditional
 cc = opencc.OpenCC("s2t.json")
 
-# Task Track: 'validation' or 'test_without_targets'
 TRACK = "validation"
-
-# Flags for external data sources
 WIKI = False
 BABELNET = False
 
-# System name and source language
 SYSTEM_NAME = "gpt-4o-2024-08-06"
 SOURCE_LANGUAGE = "English"
+DATA_DIR = "./data"
 
-# Language Codes
 LANGUAGES = {
     "Arabic": "ar_AE",
     "English": "en_US",
@@ -51,8 +44,10 @@ LANGUAGES = {
     "Chinese (Traditional)": "zh_TW",
 }
 
+ne_dict = {}
+bn_dict = {}
 
-# Load TSV file to dictionary
+
 def load_tsv_to_dict(filename, key_column):
     data_dict = {}
     with open(filename, mode="r", newline="", encoding="utf-8") as file:
@@ -63,7 +58,6 @@ def load_tsv_to_dict(filename, key_column):
     return data_dict
 
 
-# open the jsonl file and read the content
 def read_jsonl(file_path):
     data = []
     with open(file_path, "r", encoding="utf-8") as f:
@@ -72,7 +66,6 @@ def read_jsonl(file_path):
     return data
 
 
-# GPT translation function
 def gpt_translation_prompt(source_language, target_language, text, wikidata_id, id):
     src_sent = examples[source_language]["source"]
     tgt_sent = examples[target_language]["target"]
@@ -81,8 +74,6 @@ def gpt_translation_prompt(source_language, target_language, text, wikidata_id, 
     openai.api_key = os.getenv("OPENAI_API_KEY")
     if BABELNET:
         entity_info = bn_dict.get(id)
-        if entity_info is None:
-            print("Missing ids in BabelNet TSV:", id)
 
     elif WIKI:
         entity_info = ne_dict.get(wikidata_id)
@@ -95,17 +86,13 @@ def gpt_translation_prompt(source_language, target_language, text, wikidata_id, 
                 )
             if target_language == "Chinese (Traditional)":
                 all_translations = cc.convert(all_translations)
-        else:
-            print("Missing wikidata_id:", wikidata_id)
 
-    if WIKI == False and BABELNET == False:
-        # GPT - Our Prompt
+    if not WIKI and not BABELNET:
         prompt = prompts(
             "One_Shot", source_language, target_language, src_sent, tgt_sent
         )
 
     elif BABELNET:
-        # GPT + NETs with BN
         prompt = prompts(
             "One_Shot_BN",
             source_language,
@@ -117,14 +104,11 @@ def gpt_translation_prompt(source_language, target_language, text, wikidata_id, 
         )
 
     else:
-        # GPT + NETs with WikiData
         named_entity = entity_info["Named_Entity"]
         if target_language == "Chinese (Traditional)":
             named_entity = cc.convert(named_entity)
 
         if entity_info["Label"] == "" and entity_info["Also known as"] == "":
-            # WikiData translation missing
-            print("Missing translations:", wikidata_id)
             prompt = prompts(
                 "Missing_WD",
                 source_language,
@@ -135,7 +119,6 @@ def gpt_translation_prompt(source_language, target_language, text, wikidata_id, 
             )
 
         else:
-            # WikiData translation available
             prompt = prompts(
                 "Soft_NETs_WD",
                 source_language,
@@ -153,7 +136,7 @@ def gpt_translation_prompt(source_language, target_language, text, wikidata_id, 
     ]
 
     response = openai.chat.completions.create(
-        model="gpt-4o-2024-08-06",
+        model=SYSTEM_NAME,
         temperature=0,
         max_tokens=200,
         top_p=1,
@@ -167,7 +150,6 @@ def gpt_translation_prompt(source_language, target_language, text, wikidata_id, 
     return response.choices[0].message.content.strip()
 
 
-# Translate and write to file
 def translate_and_write(input_file, output_file, source_language, target_language):
     with open(input_file, "r", encoding="utf-8") as f:
         data = [json.loads(line.strip()) for line in f.readlines()]
@@ -207,7 +189,6 @@ def translate_and_write(input_file, output_file, source_language, target_languag
     print(f"Translations written to {output_file}")
 
 
-# Harmonic Evaluation
 def eval_harmonic(system_name, language_name, split_name):
     score_comet = eval_comet(system_name, language_name, split_name)
     score_meta = eval_meta(system_name, language_name, split_name)
@@ -219,20 +200,6 @@ def eval_harmonic(system_name, language_name, split_name):
 
 
 if __name__ == "__main__":
-    """
-    Target Languages:
-    - Arabic
-    - Chinese (Traditional)
-    - French
-    - German
-    - Italian
-    - Japanese
-    - Korean
-    - Spanish
-    - Thai
-    - Turkish
-    """
-
     parser = argparse.ArgumentParser(
         description="Translate and evaluate translations in target language"
     )
@@ -246,30 +213,22 @@ if __name__ == "__main__":
     tgt_lan = args.language
 
     tgt_lan_code = LANGUAGES[tgt_lan]
-    input_jsonl = f"./data/references/{TRACK}/{tgt_lan_code}.jsonl"
-    output_jsonl = f"./data/predictions/gpt-4o-2024-08-06/{TRACK}/{tgt_lan_code}.jsonl"
+    input_jsonl = f"{DATA_DIR}/references/{TRACK}/{tgt_lan_code}.jsonl"
+    output_jsonl = f"{DATA_DIR}/predictions/{SYSTEM_NAME}/{TRACK}/{tgt_lan_code}.jsonl"
 
-    # Wiki data
     if WIKI:
-        ne_file = f"./data/wikidata/{TRACK}/{tgt_lan_code}.tsv"
-        global ne_dict
-        ne_dict = load_tsv_to_dict(ne_file, "wikidata_id")
+        ne_dict = load_tsv_to_dict(f"{DATA_DIR}/wikidata/{TRACK}/{tgt_lan_code}.tsv", "wikidata_id")
 
-    # BabelNet
     if BABELNET:
-        bn_file = (
-            f"./data/babelnet/{TRACK}/BabelNet_NEs_validation.xlsx - {tgt_lan_code}.tsv"
+        bn_dict = load_tsv_to_dict(
+            f"{DATA_DIR}/babelnet/{TRACK}/BabelNet_NEs_validation.xlsx - {tgt_lan_code}.tsv", "id"
         )
-        global bn_dict
-        bn_dict = load_tsv_to_dict(bn_file, "id")
 
     translate_and_write(input_jsonl, output_jsonl, SOURCE_LANGUAGE, tgt_lan)
 
     if TRACK == "validation":
-        d = "validation"
-        evaluation = eval_harmonic(SYSTEM_NAME, tgt_lan_code, d)
-        h = evaluation["harmonic"]
-        print(h)
+        evaluation = eval_harmonic(SYSTEM_NAME, tgt_lan_code, "validation")
+        print(evaluation["harmonic"])
 
 
 # Example usage

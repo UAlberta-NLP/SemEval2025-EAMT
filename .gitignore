@@ -1,8 +1,15 @@
-# Self
+# Project-specific
 backup/
+CLAUDE.md
+
+# Generated output (large model data dir)
+gpt/data/
+
+# Credentials
+.env
+
+# macOS
 .DS_Store
-*.jsonl
-figure.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

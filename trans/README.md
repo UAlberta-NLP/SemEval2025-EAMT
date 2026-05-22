@@ -1,3 +1,9 @@
-# SemEval2025-EAMT
-SemEval 2025 - Task 2: EA-MT
-## Translation Module
+# Translation Backends
+
+Alternative translation systems used alongside the GPT module.
+
+| File | Description |
+|------|-------------|
+| `gt_trans.ipynb` | Google Cloud Translation API notebook |
+| `GoogleTrans.zip` | Archived Google Translate scripts |
+| `PtomptGPT.zip` | Archived prompt-based GPT translation notebooks |
