@@ -1,34 +1,70 @@
-# SemEval2025-EAMT
+# UAlberta at SemEval-2025 Task 2: Entity-Aware Machine Translation
 
-Code for the paper **UAlberta at SemEval-2025 Task 2: Prompting and Ensembling for Entity-Aware Translation**. In *Proceedings of the 19th International Workshop on Semantic Evaluation (SemEval-2025)*, pages 1709–1717, Vienna, Austria. Association for Computational Linguistics.
+> **Prompting and Ensembling for Entity-Aware Translation**  
+> *Proceedings of SemEval-2025, Vienna, Austria. Association for Computational Linguistics.*
 
-**1st Place — COMET Track**
+🏆 **1st Place — COMET Track**
 
-[Task](https://sapienzanlp.github.io/ea-mt/) | [Leaderboard](https://huggingface.co/spaces/sapienzanlp/ea-mt-leaderboard) | [Paper](https://aclanthology.org/2025.semeval-1.224/) | [Poster](assets/poster.pdf)
+[![Paper](https://img.shields.io/badge/Paper-ACL%20Anthology-red)](https://aclanthology.org/2025.semeval-1.224/)
+[![Task](https://img.shields.io/badge/Task-EA--MT-blue)](https://sapienzanlp.github.io/ea-mt/)
+[![Leaderboard](https://img.shields.io/badge/Leaderboard-HuggingFace-yellow)](https://huggingface.co/spaces/sapienzanlp/ea-mt-leaderboard)
 
 ---
 
 ## Overview
 
-The system translates English sentences to 10 target languages while correctly handling named entities (NEs) using Wikidata and BabelNet as external knowledge bases.
+We present the UAlberta system for [SemEval-2025 Task 2](https://sapienzanlp.github.io/ea-mt/) on Entity-Aware Machine Translation (EA-MT). The task requires translating English sentences into 10 target languages while correctly translating named entities (NEs).
 
-**Target languages:** Arabic (`ar_AE`), Chinese Traditional (`zh_TW`), French (`fr_FR`), German (`de_DE`), Italian (`it_IT`), Japanese (`ja_JP`), Korean (`ko_KR`), Spanish (`es_ES`), Thai (`th_TH`), Turkish (`tr_TR`)
+Our approach combines:
+- **Prompt engineering** with GPT-4o, including retrieval-augmented generation using Wikidata and BabelNet NE translations
+- **Literal ensembling** to select the best translation across multiple systems using word alignment and NE presence
+
+**Target languages:** Arabic, Chinese (Traditional), French, German, Italian, Japanese, Korean, Spanish, Thai, Turkish
+
+---
 
 ## Repository Structure
 
 | Directory | Description |
 |-----------|-------------|
-| `gpt/` | GPT-based translation and evaluation (main pipeline) |
-| `wiki/` | Wikidata NE retrieval and translation |
-| `literal/` | Literal ensembling — selects best translation across systems |
-| `trans/` | Alternative translation backends (Google Translate) |
-| `assets/` | Paper, poster, and official competition submissions |
+| [`gpt/`](gpt/) | GPT-based translation and evaluation — main pipeline |
+| [`wiki/`](wiki/) | Wikidata NE retrieval and translation |
+| [`literal/`](literal/) | Literal ensembling across multiple translation systems |
+| [`trans/`](trans/) | Alternative translation backends (Google Translate) |
+| [`assets/`](assets/) | Paper, poster, figures, and official competition submissions |
 
-Official submissions: [`assets/submissions/`](assets/submissions/)
+---
 
-## Authors
+## Quick Start
 
-Ning Shi, David Basil, Bradley Hauer, Noshin Nawal, Jai Riley, Daniela Teodorescu, John Zhang, Grzegorz Kondrak
+**GPT translation module** (requires `OPENAI_API_KEY`):
+
+```bash
+conda create -n ea-mt-eval python=3.10 && conda activate ea-mt-eval
+pip install -r gpt/requirements.txt
+cp gpt/.env.example gpt/.env  # add your OpenAI key
+cd gpt && python eval_harmonic.py "French"
+```
+
+**Literal ensembling module:**
+
+```bash
+conda create -n ea-mt-literal python=3.10 && conda activate ea-mt-literal
+pip install -r literal/requirements.txt
+cd literal && python literalensembling.py --input-file <translations.tsv> \
+  --input-cols System1 System2 --source-col Source \
+  --output-file output.tsv --language fr
+```
+
+See each module's README for full usage details.
+
+---
+
+## Author
+
+Ning Shi — mrshininnnnn@gmail.com
+
+---
 
 ## Citation
 
